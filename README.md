@@ -65,6 +65,17 @@ DeviceEvents
 | where InitiatingProcessFileName == "powershell.exe"
 | where AdditionalFields contains "Get-ADUser"
 ```
+Dual-Boot Detection Considerations
+
+Attackers or insiders who might use a second OS to bypass endpoint monitoring.Crosschecking system time with OS logins is a powerful way to uncover anomalies like dual-boot activity, time spoofing, or overlapping sessions across operating systems
+
+union 
+    DeviceLogonEvents, 
+    Syslog 
+| where UserName != "" 
+| project TimeGenerated, OSName, UserName, LogonType
+| summarize count() by bin(TimeGenerated, 5m), OSName, UserName, LogonType
+
 
 ---
 
