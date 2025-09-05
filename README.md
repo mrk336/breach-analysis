@@ -83,9 +83,15 @@ union
 
 **Phishing Email Detection**  
 ```kql
+let suspiciousAttachments = EmailAttachmentInfo
+    | where FileType == "pdf";
+
 EmailEvents
-| where Subject has "Invoice" and AttachmentFileType == "pdf"
+| where Subject has "Invoice"
+| join kind=inner (suspiciousAttachments) on NetworkMessageId
 | where SenderFromDomain != RecipientDomain
+| project TimeGenerated, SenderFromAddress, RecipientEmailAddress, Subject, FileName, FileType
+
 ```
 
 **Reverse Shell Launch from Office App**  
@@ -145,18 +151,28 @@ DeviceEvents
 
 **Admin Logons from Unusual Locations**  
 ```kql
+let Admins = AADGroupMembers
+    | where GroupName == "Global Administrators"
+    | project UserPrincipalName;
+
 SigninLogs
-| where UserType == "Admin"
+| where UserPrincipalName in (Admins)
 | summarize Locations = make_set(Location), Devices = make_set(DeviceDetail) by UserPrincipalName
 | where array_length(Locations) > 3 or array_length(Devices) > 3
+
 ```
 
 **Off-Hours Admin Logons**  
 ```kql
+let Admins = AADGroupMembers
+    | where GroupName == "Global Administrators"
+    | project UserPrincipalName;
+
 SigninLogs
-| where UserType == "Admin"
+| where UserPrincipalName in (Admins)
 | extend Hour = datetime_part("hour", TimeGenerated), DayOfWeek = datetime_part("dayofweek", TimeGenerated)
 | where Hour < 6 or Hour > 20 or DayOfWeek in (0, 6)
+
 ```
 
 **Local Admin Enumeration**  
