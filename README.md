@@ -110,6 +110,17 @@ DeviceProcessEvents
 DeviceProcessEvents
 | where FileName == "mimikatz.exe" or ProcessCommandLine contains "sekurlsa"
 ```
+### Continuous Monitoring & Health Checks
+
+Even the best detection logic falls short if your sensors go silent. This section covers the often-overlooked but critical aspect of continuous monitoring—making sure your EDR agents are alive and reporting
+
+```kql
+Heartbeat
+| summarize LastSeen=max(TimeGenerated) by Computer, _ResourceId
+| extend MinutesSinceLastHeartbeat = datetime_diff("minute", now(), LastSeen)
+| where MinutesSinceLastHeartbeat > 15
+| project Computer, MinutesSinceLastHeartbeat, LastSeen
+```
 
 **Scheduled Task Creation**  
 ```kql
